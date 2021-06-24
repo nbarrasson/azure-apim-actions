@@ -1,0 +1,49 @@
+name: copy-apim-dev-portal
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+        srcResourceGroup:
+          description: 'Source resource group name'
+          required: true
+        dstResourceGroup:
+          description: 'Destination resource group name'
+          required: true
+        srcService:
+          description: 'Source APIM service name'
+          required: true
+        dstService:
+          description: 'Destination APIM service name'
+          required: true
+
+jobs:
+  copy-apim-dev-portal:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checks-out APIM Dev portal repo
+      - uses: actions/checkout@v2
+        with:
+          repository: 'Azure/api-management-developer-portal'
+          
+      # Login to Azure    
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Install NPM  packages
+      - name: NPM install
+        run: npm install
+
+      # Runs the migration script
+      - name: Migration script
+        run: |
+          node ./migrate \
+          --sourceSubscriptionId ${{ secrets.SUBSCRIPTION_ID }} \
+          --sourceResourceGroupName ${{ github.event.inputs.srcResourceGroup }} \
+          --sourceServiceName ${{ github.event.inputs.srcService }} \
+          --destSubscriptionId ${{ secrets.SUBSCRIPTION_ID }} \
+          --destResourceGroupName ${{ github.event.inputs.dstResourceGroup }} \
+          --destServiceName ${{ github.event.inputs.dstService }}
+        working-directory: scripts.v3

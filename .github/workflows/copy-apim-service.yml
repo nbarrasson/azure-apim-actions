@@ -1,0 +1,63 @@
+name: copy-apim-service
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:  
+    inputs:
+        srcResourceGroup:
+          description: 'Source resource group name'
+          required: true
+        dstResourceGroup:
+          description: 'Destination resource group name'
+          required: true
+        srcService:
+          description: 'Source APIM service name'
+          required: true
+        dstService:
+          description: 'Destination APIM service name'
+          required: true
+
+jobs:
+  copy-apim-service:
+    runs-on: ubuntu-latest
+    env:
+      BACKUP_CONTAINER: apimbackup
+
+    steps:
+      # Login to Azure    
+      - uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Get current date to generate unique backup name
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y%m%d-%H%M')"
+
+      # Runs the Backup script
+      - name: Backup script
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.25.0
+          inlineScript: |
+            az apim backup \
+            -n ${{ github.event.inputs.srcService }} \
+            -g ${{ github.event.inputs.srcResourceGroup }} \
+            --backup-name ${{ github.event.inputs.srcService }}-${{ steps.date.outputs.date }}.apimbackup \
+            --storage-account-name ${{ secrets.STORAGE_NAME }} \
+            --storage-account-container ${{ env.BACKUP_CONTAINER }} \
+            --storage-account-key ${{ secrets.STORAGE_KEY }}
+
+      # Runs the Restore script
+      - name: Restore script
+        uses: azure/CLI@v1
+        with:
+          azcliversion: 2.25.0
+          inlineScript: |
+            az apim restore \
+            -n ${{ github.event.inputs.dstService }} \
+            -g ${{ github.event.inputs.dstResourceGroup }} \
+            --backup-name ${{ github.event.inputs.srcService }}-${{ steps.date.outputs.date }}.apimbackup \
+            --storage-account-name ${{ secrets.STORAGE_NAME }} \
+            --storage-account-container ${{ env.BACKUP_CONTAINER }} \
+            --storage-account-key ${{ secrets.STORAGE_KEY }}
