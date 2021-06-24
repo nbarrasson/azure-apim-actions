@@ -38,7 +38,7 @@ In order to run these workflows you will need the following :
 ### Create a Service Principal
 
 In order Github Actions to log onto your Azure subscription and execute the steps you need to create a Service Principal with read/write permissions on the source and destination APIM services.
-The below command line creates a Service Principal with Contributor role on a resource group (assuming both source and destination service are inside).
+The below command line creates a Service Principal with Contributor role on a resource group (assuming both source and destination services are inside).
 
 Replace <YOUR_SUBSCRIPTION_ID> and <YOUR_RESOURCE_GROUP_NAME> with appropriated values.
 
